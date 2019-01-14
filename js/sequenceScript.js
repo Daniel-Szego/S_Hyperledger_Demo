@@ -11,69 +11,18 @@ let namespace = "org.sequence.model";
  * @transaction
  */
 async function IssueTransaction(tx) {  // eslint-disable-line no-unused-vars
-  let flavorId = tx.flavorId
-  let amount = tx.amount
-  let destinationAccountId = tx.destinationAccountId
-  let actionTags = tx.actionTags 
-  let tokenTags = tx.tokenTags 
-  let transactionTags = tx.transactionTags 
+  let flavorId = tx.flavorId;
+  let amount = tx.amount;
+  let destinationAccountId = tx.destinationAccountId;
+  let actionTags = tx.actionTags; 
+  let tokenTags = tx.tokenTags; 
+  let transactionTags = tx.transactionTags; 
 
-  // INITIAL ERROR HANDLING
-  if (amount < 1) {
-  	throw("Amount of a newly created transaction must be bigger than zero");
-  }
+  // Call issue action
+  IssueAction(flavorId,amount, destinationAccountId, actionTags, tokenTags, transactionTags);
   
-  const factory = getFactory(); 
+  // Create transaction
   
-  const tokenReg = await getAssetRegistry(namespace + '.Token'); 
-  
-  // LOGIC DIFFERENTIATION IF TOKEN IS FUNGIBLE OR NON-FUNGIBLE ?
-   
-  // getting next id
-  let existingTokens = await tokenReg.getAll();
-  let numberOfTokens = 0;
-  let existingToken;
-  
-  await existingTokens.forEach(function (token) {
-    console.log(token.flavorID.getIdentifier());
-    console.log(flavorId.getIdentifier());    
-	if (token.flavorID.getIdentifier() == flavorId.getIdentifier()) {      	
-		numberOfTokens ++;
-      	existingToken = token;
-    }    
-  });
-  
-  // create new token for the flavor
-  if (numberOfTokens == 0) {
-	  numberOfTokens ++; 	
-
-      const newToken = await factory.newResource(namespace, 'Token', numberOfTokens.toString());
-
-  	  newToken.amount = amount;
-  	  newToken.tags = tokenTags;
-  	  newToken.flavorID  = flavorId;
-  	  newToken.accountId = destinationAccountId;
-  
-	  await tokenReg.add(newToken);     
-    
-      // RAISE EVENT
-      let TokenIssuedEvent = factory.newEvent(namespace, 'TokenIssued');
-  	  TokenIssuedEvent.token = newToken;
-  	  await emit(TokenIssuedEvent);       
-  }
-  // update existing token 
-  else{
-	  existingToken.amount = existingToken.amount + amount;
-	  await tokenReg.update(existingToken);      
-    
-      // RAISE EVENT
-      let TokenIssuedEvent = factory.newEvent(namespace, 'TokenIssued');
-  	  TokenIssuedEvent.token = existingToken;
-  	  await emit(TokenIssuedEvent);       
-  }  
-  
-  // CREATE ACTION
-
   
 }
 
@@ -90,7 +39,6 @@ async function TransferTransaction(tx) {  // eslint-disable-line no-unused-vars
   let actionTags = tx.actionTags 
   let tokenTags = tx.tokenTags 
   let transactionTags = tx.transactionTags 
-
   
 }
 
@@ -105,10 +53,7 @@ async function RetireTransaction(tx) {  // eslint-disable-line no-unused-vars
   let sourceAccountId = tx.sourceAccountId
   let tokenTags = tx.tokenTags 
   let transactionTags = tx.transactionTags 
-
-
-  
-  
+ 
 }
 
 
@@ -128,7 +73,7 @@ async function CreateTestDataTransaction(tx) {  // eslint-disable-line no-unused
     console.log('Creating a Key 1');  
 	
   	// adding key 1 
-    const keyReg = await getAssetRegistry(namespace + '.Key');   
+    const keyReg = await getParticipantRegistry(namespace + '.Key');   
     const key1 = await factory.newResource(namespace, 'Key', "1");
     await keyReg.add(key1);       
 
@@ -183,11 +128,6 @@ async function CreateTestDataTransaction(tx) {  // eslint-disable-line no-unused
  */
 async function DeleteAllDataTransaction(tx) {  // eslint-disable-line no-unused-vars
     console.log('clearing test data');
-
-    // deleting assets -  keys
-    const keysRegistry = await getAssetRegistry(namespace + '.Key'); 
-    let keys = await keysRegistry.getAll();
-    await keysRegistry.removeAll(keys);
   
     // deleting assets -  Flavour
     const flavourRegistry = await getAssetRegistry(namespace + '.Flavor'); 
@@ -210,6 +150,13 @@ async function DeleteAllDataTransaction(tx) {  // eslint-disable-line no-unused-
     await transactionsRegistry.removeAll(transactions);
  
   	// deleting participants
+  
+    // deleting participants -  keys
+    const keysRegistry = await getAssetRegistry(namespace + '.Key'); 
+    let keys = await keysRegistry.getAll();
+    await keysRegistry.removeAll(keys);
+
+    // deleting participants -  Account  
     const accountRegistry = await getParticipantRegistry(namespace + '.Account');
     let accounts = await accountRegistry.getAll();
     await accountRegistry.removeAll(accounts);
@@ -217,4 +164,101 @@ async function DeleteAllDataTransaction(tx) {  // eslint-disable-line no-unused-
     console.log('clearing all data finished');  
   
 }
+
+/**
+ * Creating a multiaction transaction.
+ * @param {org.sequence.model.STransaction} tx The sample transaction instance.
+ * @transaction
+ */
+async function MultiActionTransaction(tx) {  // eslint-disable-line no-unused-vars
+	
+}
+
+
+// SERVICE FUNCTIONS - ACTIONS
+// ISSUE TOKEN ACTION
+
+async function IssueAction (flavorId, 
+                       amount,
+                       destinationAccountId,
+                       actionTags,
+                       tokenTags,
+                       transactionTags) {
+
+  // INITIAL ERROR HANDLING
+  if (amount < 1) {
+  	throw("Amount of a newly created transaction must be bigger than zero");
+  }
+    
+  
+  const factory = getFactory(); 
+  
+  const tokenReg = await getAssetRegistry(namespace + '.Token'); 
+  
+  // LOGIC DIFFERENTIATION IF TOKEN IS FUNGIBLE OR NON-FUNGIBLE ?
+   
+  // getting next id
+  let existingTokens = await tokenReg.getAll();
+  let numberOfTokens = 0;
+  let existingToken;
+  
+  await existingTokens.forEach(function (token) {
+    console.log(token.flavorID.getIdentifier());
+    console.log(flavorId.getIdentifier());    
+    console.log(token.tags);    
+    console.log(tokenTags);    
+    console.log(token.accountId.getIdentifier());    
+    console.log(destinationAccountId.getIdentifier());    
+    
+    if (token.flavorID.getIdentifier() == flavorId.getIdentifier()) {  
+      	console.log((!token.tags && !tokenTags));
+        console.log((token.tags === tokenTags));
+        if ((!token.tags && !tokenTags) || (token.tags === tokenTags)) {
+            if (token.accountId.getIdentifier() == destinationAccountId.getIdentifier()) {
+    	  		existingToken = token;
+        		}
+            }
+    } 
+    numberOfTokens ++;
+  });
+  
+  // create new token for the flavor
+  if (!existingToken) {
+	  numberOfTokens ++; 	
+
+      const newToken = await factory.newResource(namespace, 'Token', numberOfTokens.toString());
+
+  	  newToken.amount = amount;
+  	  newToken.tags = tokenTags;
+  	  newToken.flavorID  = flavorId;
+  	  newToken.accountId = destinationAccountId;
+  
+	  await tokenReg.add(newToken);     
+    
+      // RAISE EVENT
+      let TokenIssuedEvent = factory.newEvent(namespace, 'TokenIssued');
+  	  TokenIssuedEvent.token = newToken;
+  	  await emit(TokenIssuedEvent);       
+  }
+  // update existing token 
+  else{
+	  existingToken.amount = existingToken.amount + amount;
+	  await tokenReg.update(existingToken);      
+    
+      // RAISE EVENT
+      let TokenIssuedEvent = factory.newEvent(namespace, 'TokenIssued');
+  	  TokenIssuedEvent.token = existingToken;
+  	  await emit(TokenIssuedEvent);       
+  }  
+  
+  // CREATE ACTION
+  
+  
+  
+
+  
+}
+
+
+
 

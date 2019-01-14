@@ -31,21 +31,24 @@ concept Snapshop {
     o String[] transactionTags
 }
 
+enum FeedType {
+	o Action
+    o Transaction
+}
+
 // ASSETS
 
-asset Key identified by id {
+abstract asset AbstractSequenceAsset identified by id {
 	o String id
 }
 
-asset Flavor identified by id {
-	o String id
+asset Flavor extends AbstractSequenceAsset {
 	o String tags optional
 	--> Key[] keyIds
     o Integer quorum  
 }
 
-asset Token identified by id {
-	o String id
+asset Token extends AbstractSequenceAsset {
     o Integer amount
     o String tags optional
     --> Flavor flavorID 
@@ -54,8 +57,7 @@ asset Token identified by id {
     o String accountTags optional
 }
 
-asset Action identified by id {
-	o String id
+asset Action extends AbstractSequenceAsset {
     o String timestamp
     o String type
     o Integer amount
@@ -68,18 +70,29 @@ asset Action identified by id {
     o String tags optional
 }
 
-asset Transaction identified by id {
-	o String id
+asset Transaction extends AbstractSequenceAsset {
     o String timestamp
     o Integer sequenceNumber
     --> Action[] array
     o String tags optional
 }
 
+asset Feed extends AbstractSequenceAsset {
+  	o FeedType type
+    o String filter
+}
+
 // PARTICIPANTS
 
-participant Account identified by id {
-  	o String id
+abstract participant AbstractSequenceParticipant {
+  o String id
+}
+
+
+participant Key extends AbstractSequenceAsset {
+}
+
+participant Account extends AbstractSequenceAsset {
     o String tags optional
     o Key[] keyIds
     o Integer quorum
@@ -87,15 +100,23 @@ participant Account identified by id {
 
 // TRANSACTIONS
 
+// transaction builder transaction
+// aggregated all of the actions as practical subtransactions 
+transaction STransaction {
+  o String acctionList
+}
+
+// TO BE DELETED AT PRODUCTION
 transaction Issue {
 	--> Flavor flavorId
     o Integer amount
-    --> Account destinationAccountId
     o String actionTags optional
     o String tokenTags optional
     o String transactionTags optional
+    --> Account destinationAccountId
 }
 
+// TO BE DELETED AT PRODUCTION
 transaction Transfer {
 	--> Flavor flavorId
     o Integer amount
@@ -106,6 +127,7 @@ transaction Transfer {
     o String transactionTags optional
 }
 
+// TO BE DELETED AT PRODUCTION
 transaction Retire {
 	--> Flavor flavourId
     o Integer amount
@@ -114,9 +136,11 @@ transaction Retire {
     o String transactionTags optional
 }
 
+// TO BE DELETED AT PRODUCTION
 transaction CreateTestData {
 }
 
+// TO BE DELETED AT PRODUCTION
 transaction DeleteAllData {
 }
 
@@ -133,5 +157,4 @@ event TokenTransferred {
 event TokenRetired {
   --> Token token
 }
-
 
