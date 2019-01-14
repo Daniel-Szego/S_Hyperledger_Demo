@@ -42,6 +42,10 @@ enum ActionType {
     o Retire
 }
 
+enum TransactionState {
+	o Proposal
+    o Executed
+}
 // ASSETS
 
 abstract asset AbstractSequenceAsset identified by id {
@@ -67,6 +71,8 @@ asset Action extends AbstractSequenceAsset {
     o String timestamp
     o ActionType type
     o Integer amount
+    o Integer requiredApprovementNumber
+    o Key[] approvments
     --> Flavor flavorId
     --> Account sourceAccountId optional
     o String filter
@@ -79,6 +85,7 @@ asset Action extends AbstractSequenceAsset {
 asset Transaction extends AbstractSequenceAsset {
     o String timestamp
     o Integer sequenceNumber
+    o TransactionState transactionState
     --> Action[] actions
     o String tags optional
 }
@@ -109,6 +116,12 @@ participant Account extends AbstractSequenceAsset {
 // aggregated all of the actions as practical subtransactions 
 transaction STransaction {
   o String acctionList
+}
+
+// Approve a certain action
+// sign the action with a given key
+transaction Approve {
+  o Action action
 }
 
 // TO BE DELETED AT PRODUCTION
@@ -162,5 +175,7 @@ event TokenTransferred {
 event TokenRetired {
   --> Token token
 }
+
+
 
 

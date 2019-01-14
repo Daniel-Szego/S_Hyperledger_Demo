@@ -23,10 +23,7 @@ async function IssueTransaction(tx) {  // eslint-disable-line no-unused-vars
 
   // Call issue action
   let newAction = await IssueAction(flavorId,amount, destinationAccountId, actionTags, tokenTags, transactionTags);
-  
-  console.log("Action added");
-  console.log(newAction);
-  
+    
   // Create transaction
   const transctionReg = await getAssetRegistry(namespace + '.Transaction'); 
 
@@ -202,6 +199,7 @@ async function MultiActionTransaction(tx) {  // eslint-disable-line no-unused-va
 
 
 
+
 // SERVICE FUNCTIONS - ACTIONS
 // ISSUE TOKEN ACTION
 
@@ -217,6 +215,7 @@ async function IssueAction (flavorId,
   	throw("Amount of a newly created transaction must be bigger than zero");
   }
     
+  console.log("Issue transaction action started");
   
   const factory = getFactory(); 
   
@@ -307,9 +306,15 @@ async function IssueAction (flavorId,
   newAction.snapshot = newSnaphot;
   newAction.tags = "-";
   
-  await actionReg.add(newAction);       
+  await actionReg.add(newAction);    
+  
+  console.log("Issue transaction action finished");
+  
   return newAction;
 }
+
+
+
 
 
 
