@@ -11,36 +11,69 @@ let namespace = "org.sequence.model";
  * @transaction
  */
 async function IssueTransaction(tx) {  // eslint-disable-line no-unused-vars
-  let flavourId = tx.flavourId
+  let flavorId = tx.flavorId
   let amount = tx.amount
   let destinationAccountId = tx.destinationAccountId
   let actionTags = tx.actionTags 
   let tokenTags = tx.tokenTags 
   let transactionTags = tx.transactionTags 
 
+  // INITIAL ERROR HANDLING
+  if (amount < 1) {
+  	throw("Amount of a newly created transaction must be bigger than zero");
+  }
+  
   const factory = getFactory(); 
   
   const tokenReg = await getAssetRegistry(namespace + '.Token'); 
   
+  // LOGIC DIFFERENTIATION IF TOKEN IS FUNGIBLE OR NON-FUNGIBLE ?
+   
   // getting next id
   let existingTokens = await tokenReg.getAll();
   let numberOfTokens = 0;
+  let existingToken;
   
   await existingTokens.forEach(function (token) {
-    numberOfTokens ++;
+    console.log(token.flavorID.getIdentifier());
+    console.log(flavorId.getIdentifier());    
+	if (token.flavorID.getIdentifier() == flavorId.getIdentifier()) {      	
+		numberOfTokens ++;
+      	existingToken = token;
+    }    
   });
-  numberOfTokens ++; 	
+  
+  // create new token for the flavor
+  if (numberOfTokens == 0) {
+	  numberOfTokens ++; 	
 
-  const token = await factory.newResource(namespace, 'Token', numberOfTokens.toString());
-  token.amount = amount;
-  token.tags = tokenTags;
-  token.flavorID  = flavourId;
-  token.accountId = destinationAccountId;
+      const newToken = await factory.newResource(namespace, 'Token', numberOfTokens.toString());
+
+  	  newToken.amount = amount;
+  	  newToken.tags = tokenTags;
+  	  newToken.flavorID  = flavorId;
+  	  newToken.accountId = destinationAccountId;
   
-  await tokenReg.add(token);      
+	  await tokenReg.add(newToken);     
+    
+      // RAISE EVENT
+      let TokenIssuedEvent = factory.newEvent(namespace, 'TokenIssued');
+  	  TokenIssuedEvent.token = newToken;
+  	  await emit(TokenIssuedEvent);       
+  }
+  // update existing token 
+  else{
+	  existingToken.amount = existingToken.amount + amount;
+	  await tokenReg.update(existingToken);      
+    
+      // RAISE EVENT
+      let TokenIssuedEvent = factory.newEvent(namespace, 'TokenIssued');
+  	  TokenIssuedEvent.token = existingToken;
+  	  await emit(TokenIssuedEvent);       
+  }  
   
-  // RAISE EVENT
-  
+  // CREATE ACTION
+
   
 }
 
@@ -184,5 +217,4 @@ async function DeleteAllDataTransaction(tx) {  // eslint-disable-line no-unused-
     console.log('clearing all data finished');  
   
 }
-
 
