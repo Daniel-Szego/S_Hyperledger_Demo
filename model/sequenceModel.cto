@@ -22,7 +22,7 @@ concept Tag {
     o String value
 }
 
-concept Snapshop {
+concept Snapshot {
 	o String[] actionTags
     o String[] flavourTags
     o String[] sourceAccountTags
@@ -34,6 +34,12 @@ concept Snapshop {
 enum FeedType {
 	o Action
     o Transaction
+}
+
+enum ActionType {
+	o Issue
+    o Transfer
+    o Retire
 }
 
 // ASSETS
@@ -59,21 +65,21 @@ asset Token extends AbstractSequenceAsset {
 
 asset Action extends AbstractSequenceAsset {
     o String timestamp
-    o String type
+    o ActionType type
     o Integer amount
     --> Flavor flavorId
-    --> Account sourceAccountId
+    --> Account sourceAccountId optional
     o String filter
     o String[] filterParams
-    o String destinationAccountId
-    o Snapshop snapshot
+    o Account destinationAccountId optional
+    o Snapshot snapshot
     o String tags optional
 }
 
 asset Transaction extends AbstractSequenceAsset {
     o String timestamp
     o Integer sequenceNumber
-    --> Action[] array
+    --> Action[] actions
     o String tags optional
 }
 
@@ -87,7 +93,6 @@ asset Feed extends AbstractSequenceAsset {
 abstract participant AbstractSequenceParticipant {
   o String id
 }
-
 
 participant Key extends AbstractSequenceAsset {
 }
@@ -157,4 +162,5 @@ event TokenTransferred {
 event TokenRetired {
   --> Token token
 }
+
 

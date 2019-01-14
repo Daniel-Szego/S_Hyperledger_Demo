@@ -1,5 +1,5 @@
 /**
- * New script file
+ * Sequence business and transaction logic
  */
 
 
@@ -17,13 +17,38 @@ async function IssueTransaction(tx) {  // eslint-disable-line no-unused-vars
   let actionTags = tx.actionTags; 
   let tokenTags = tx.tokenTags; 
   let transactionTags = tx.transactionTags; 
+  
+  // getting factory
+  const factory = getFactory(); 
 
   // Call issue action
-  IssueAction(flavorId,amount, destinationAccountId, actionTags, tokenTags, transactionTags);
+  let newAction = await IssueAction(flavorId,amount, destinationAccountId, actionTags, tokenTags, transactionTags);
+  
+  console.log("Action added");
+  console.log(newAction);
   
   // Create transaction
+  const transctionReg = await getAssetRegistry(namespace + '.Transaction'); 
+
+  // getting next id
+  let existingTransactions = await transctionReg.getAll();
+  let existingTransactionNum = 0;
   
+  await existingTransactions.forEach(function (transaction) {
+    existingTransactionNum ++;
+  });
+  existingTransactionNum ++; 	
   
+  const newTransaction = await factory.newResource(namespace, 'Transaction', existingTransactionNum.toString());
+
+  newTransaction.timestamp =  Date.now().toString();
+  newTransaction.sequenceNumber = existingTransactionNum;
+  newTransaction.actions = new Array();
+  newTransaction.actions.push(newAction);
+  newTransaction.tags = transactionTags;
+ 
+  transctionReg.add(newTransaction);
+
 }
 
 /**
@@ -175,6 +200,8 @@ async function MultiActionTransaction(tx) {  // eslint-disable-line no-unused-va
 }
 
 
+
+
 // SERVICE FUNCTIONS - ACTIONS
 // ISSUE TOKEN ACTION
 
@@ -203,16 +230,8 @@ async function IssueAction (flavorId,
   let existingToken;
   
   await existingTokens.forEach(function (token) {
-    console.log(token.flavorID.getIdentifier());
-    console.log(flavorId.getIdentifier());    
-    console.log(token.tags);    
-    console.log(tokenTags);    
-    console.log(token.accountId.getIdentifier());    
-    console.log(destinationAccountId.getIdentifier());    
     
     if (token.flavorID.getIdentifier() == flavorId.getIdentifier()) {  
-      	console.log((!token.tags && !tokenTags));
-        console.log((token.tags === tokenTags));
         if ((!token.tags && !tokenTags) || (token.tags === tokenTags)) {
             if (token.accountId.getIdentifier() == destinationAccountId.getIdentifier()) {
     	  		existingToken = token;
@@ -242,6 +261,7 @@ async function IssueAction (flavorId,
   }
   // update existing token 
   else{
+    
 	  existingToken.amount = existingToken.amount + amount;
 	  await tokenReg.update(existingToken);      
     
@@ -251,14 +271,45 @@ async function IssueAction (flavorId,
   	  await emit(TokenIssuedEvent);       
   }  
   
-  // CREATE ACTION
+  // CREATE ISSUE ACTION
   
-  
-  
+  const actionReg = await getAssetRegistry(namespace + '.Action'); 
 
+  // getting next id
+  let existingActions = await actionReg.getAll();
+  let existingActionsNum = 0;
   
+  await existingActions.forEach(function (action) {
+    existingActionsNum ++;
+  });
+  existingActionsNum ++; 	
+  
+  const newAction = await factory.newResource(namespace, 'Action', existingActionsNum.toString());
+
+  newAction.timestamp =  Date.now().toString();
+  newAction.type = "Issue";
+  newAction.amount = amount;
+  newAction.flavorId = flavorId;
+  // newAction.sourceAccountId = 0;
+  newAction.filter = "";
+  newAction.filterParams = new Array();
+  newAction.filterParams.push("-");  
+  newAction.destinationAccountId = destinationAccountId;
+  
+  const newSnaphot = await factory.newConcept(namespace,'Snapshot');
+  newSnaphot.actionTags = new Array();
+  newSnaphot.flavourTags = new Array();
+  newSnaphot.sourceAccountTags = new Array();
+  newSnaphot.destinationAccountTags = new Array();
+  newSnaphot.tokenTags = new Array();
+  newSnaphot.transactionTags = new Array();
+  
+  newAction.snapshot = newSnaphot;
+  newAction.tags = "-";
+  
+  await actionReg.add(newAction);       
+  return newAction;
 }
-
 
 
 
