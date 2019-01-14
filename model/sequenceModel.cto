@@ -1,0 +1,136 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+namespace org.sequence.model
+
+// CONCEPTS
+
+// Question if it should be used this way ?
+concept Tag {
+	o String name
+    o String value
+}
+
+concept Snapshop {
+	o String[] actionTags
+    o String[] flavourTags
+    o String[] sourceAccountTags
+    o String[] destinationAccountTags
+    o String[] tokenTags
+    o String[] transactionTags
+}
+
+// ASSETS
+
+asset Keys identified by id {
+	o String id
+}
+
+asset Flavour identified by id {
+	o String id
+	o String tags optional
+	--> Keys[] keyIds
+    o Integer quorum  
+}
+
+asset Tokens identified by id {
+	o String id
+    o Integer amount
+    o String tags optional
+    --> Flavour flavorID 
+    o String flavorTags optional
+    o Account accountId
+    o String accountTags optional
+}
+
+asset Actions identified by id {
+	o String id
+    o String timestamp
+    o String type
+    o Integer amount
+    --> Flavour flavorId
+    --> Account sourceAccountId
+    o String filter
+    o String[] filterParams
+    o String destinationAccountId
+    o Snapshop snapshot
+    o String tags optional
+}
+
+asset Transactions identified by id {
+	o String id
+    o String timestamp
+    o Integer sequenceNumber
+    --> Actions[] array
+    o String tags optional
+}
+
+// PARTICIPANTS
+
+participant Account identified by id {
+  	o String id
+    o String tags optional
+    o Keys[] keyIds
+    o Integer quorum
+}
+
+// TRANSACTIONS
+
+transaction Issue {
+	--> Flavour flavourId
+    o Integer amount
+    --> Account destinationAccountId
+    o String actionTags optional
+    o String tokenTags optional
+    o String transactionTags optional
+}
+
+transaction Transfer {
+	--> Flavour flavourId
+    o Integer amount
+    --> Account sourceAccountId
+    --> Account destinationAccountId
+    o String actionTags optional
+    o String tokenTags optional
+    o String transactionTags optional
+}
+
+transaction Retire {
+	--> Flavour flavourId
+    o Integer amount
+    --> Account sourceAccountId
+    o String actionTags optional
+    o String transactionTags optional
+}
+
+transaction CreateTestData {
+}
+
+transaction DeleteAllData {
+}
+
+// EVENTS
+
+event TokenIssued {
+  --> Tokens token
+}
+
+event TokenTransferred {
+  --> Tokens token
+}
+
+event TokenRetired {
+  --> Tokens token
+}
+
