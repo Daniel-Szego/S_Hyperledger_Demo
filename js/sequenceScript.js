@@ -20,7 +20,7 @@ async function IssueTransaction(tx) {  // eslint-disable-line no-unused-vars
 
   const factory = getFactory(); 
   
-  const tokenReg = await getAssetRegistry(namespace + '.Tokens'); 
+  const tokenReg = await getAssetRegistry(namespace + '.Token'); 
   
   // getting next id
   let existingTokens = await tokenReg.getAll();
@@ -31,7 +31,7 @@ async function IssueTransaction(tx) {  // eslint-disable-line no-unused-vars
   });
   numberOfTokens ++; 	
 
-  const token = await factory.newResource(namespace, 'Tokens', numberOfTokens.toString());
+  const token = await factory.newResource(namespace, 'Token', numberOfTokens.toString());
   token.amount = amount;
   token.tags = tokenTags;
   token.flavorID  = flavourId;
@@ -95,18 +95,49 @@ async function CreateTestDataTransaction(tx) {  // eslint-disable-line no-unused
     console.log('Creating a Key 1');  
 	
   	// adding key 1 
-    const keyReg = await getParticipantRegistry(namespace + '.Keys');   
-    const key1 = await factory.newResource(namespace, 'Keys', "1");
+    const keyReg = await getAssetRegistry(namespace + '.Key');   
+    const key1 = await factory.newResource(namespace, 'Key', "1");
     await keyReg.add(key1);       
 
     // adding key 2 
-    const key2 = await factory.newResource(namespace, 'Keys', "2");
+    const key2 = await factory.newResource(namespace, 'Key', "2");
     await keyReg.add(key2);       
 
     // adding key 3
-    const key3 = await factory.newResource(namespace, 'Keys', "3"); 
+    const key3 = await factory.newResource(namespace, 'Key', "3"); 
     await keyReg.add(key3);       
 
+    // adding Flavors 1
+    const flavorsReg = await getAssetRegistry(namespace + '.Flavor');   
+    const flavors1 = await factory.newResource(namespace, 'Flavor', "1"); 
+    flavors1.keyIds = new Array();
+    flavors1.keyIds.push(key1);
+    flavors1.quorum  = 1;
+    await flavorsReg.add(flavors1);       
+
+    // adding Flavors 2
+    const flavors2 = await factory.newResource(namespace, 'Flavor', "2"); 
+    flavors2.keyIds = new Array();
+    flavors2.keyIds.push(key2);
+    flavors2.keyIds.push(key3);  
+    flavors2.quorum  = 1;
+    await flavorsReg.add(flavors2);       
+
+    // adding Account 1
+    const accountReg = await getParticipantRegistry(namespace + '.Account');     
+    const account1 = await factory.newResource(namespace, 'Account', "1"); 
+    account1.keyIds = new Array();
+    account1.keyIds.push(key1);
+    account1.quorum  = 1;
+    await accountReg.add(account1);       
+  
+    // adding Account 2
+    const account2 = await factory.newResource(namespace, 'Account', "2"); 
+    account2.keyIds = new Array();
+    account2.keyIds.push(key2);
+    account2.keyIds.push(key3);  
+    account2.quorum  = 1;
+    await accountReg.add(account2);       
   
   
 }
@@ -121,27 +152,27 @@ async function DeleteAllDataTransaction(tx) {  // eslint-disable-line no-unused-
     console.log('clearing test data');
 
     // deleting assets -  keys
-    const keysRegistry = await getAssetRegistry(namespace + '.Keys'); 
+    const keysRegistry = await getAssetRegistry(namespace + '.Key'); 
     let keys = await keysRegistry.getAll();
     await keysRegistry.removeAll(keys);
   
     // deleting assets -  Flavour
-    const flavourRegistry = await getAssetRegistry(namespace + '.Flavour'); 
+    const flavourRegistry = await getAssetRegistry(namespace + '.Flavor'); 
     let flavour = await flavourRegistry.getAll();
     await flavourRegistry.removeAll(flavour);
 
     // deleting assets -  Tokens
-    const tokenRegistry = await getAssetRegistry(namespace + '.Tokens'); 
+    const tokenRegistry = await getAssetRegistry(namespace + '.Token'); 
     let tokens = await tokenRegistry.getAll();
     await tokenRegistry.removeAll(tokens);
   
     // deleting assets -  Actions
-    const actionsRegistry = await getAssetRegistry(namespace + '.Actions'); 
+    const actionsRegistry = await getAssetRegistry(namespace + '.Action'); 
     let actions = await actionsRegistry.getAll();
     await actionsRegistry.removeAll(actions);
   
     // deleting assets -  Transactions
-    const transactionsRegistry = await getAssetRegistry(namespace + '.Transactions'); 
+    const transactionsRegistry = await getAssetRegistry(namespace + '.Transaction'); 
     let transactions = await transactionsRegistry.getAll();
     await transactionsRegistry.removeAll(transactions);
  

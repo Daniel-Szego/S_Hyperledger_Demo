@@ -33,33 +33,33 @@ concept Snapshop {
 
 // ASSETS
 
-asset Keys identified by id {
+asset Key identified by id {
 	o String id
 }
 
-asset Flavour identified by id {
+asset Flavor identified by id {
 	o String id
 	o String tags optional
-	--> Keys[] keyIds
+	--> Key[] keyIds
     o Integer quorum  
 }
 
-asset Tokens identified by id {
+asset Token identified by id {
 	o String id
     o Integer amount
     o String tags optional
-    --> Flavour flavorID 
+    --> Flavor flavorID 
     o String flavorTags optional
     o Account accountId
     o String accountTags optional
 }
 
-asset Actions identified by id {
+asset Action identified by id {
 	o String id
     o String timestamp
     o String type
     o Integer amount
-    --> Flavour flavorId
+    --> Flavor flavorId
     --> Account sourceAccountId
     o String filter
     o String[] filterParams
@@ -68,11 +68,11 @@ asset Actions identified by id {
     o String tags optional
 }
 
-asset Transactions identified by id {
+asset Transaction identified by id {
 	o String id
     o String timestamp
     o Integer sequenceNumber
-    --> Actions[] array
+    --> Action[] array
     o String tags optional
 }
 
@@ -81,14 +81,14 @@ asset Transactions identified by id {
 participant Account identified by id {
   	o String id
     o String tags optional
-    o Keys[] keyIds
+    o Key[] keyIds
     o Integer quorum
 }
 
 // TRANSACTIONS
 
 transaction Issue {
-	--> Flavour flavourId
+	--> Flavor flavorId
     o Integer amount
     --> Account destinationAccountId
     o String actionTags optional
@@ -97,7 +97,7 @@ transaction Issue {
 }
 
 transaction Transfer {
-	--> Flavour flavourId
+	--> Flavor flavorId
     o Integer amount
     --> Account sourceAccountId
     --> Account destinationAccountId
@@ -107,7 +107,7 @@ transaction Transfer {
 }
 
 transaction Retire {
-	--> Flavour flavourId
+	--> Flavor flavourId
     o Integer amount
     --> Account sourceAccountId
     o String actionTags optional
@@ -123,14 +123,16 @@ transaction DeleteAllData {
 // EVENTS
 
 event TokenIssued {
-  --> Tokens token
+  --> Token token
 }
 
 event TokenTransferred {
-  --> Tokens token
+  --> Token token
 }
 
 event TokenRetired {
-  --> Tokens token
+  --> Token token
 }
+
+
 
