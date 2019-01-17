@@ -25,7 +25,7 @@ async function IssueTransaction(tx) {  // eslint-disable-line no-unused-vars
   let newAction = await IssueAction(flavorId,amount, destinationAccountId, actionTags, tokenTags, transactionTags);
     
   // Create transaction
-  const transctionReg = await getAssetRegistry(namespace + '.Transaction'); 
+  const transctionReg = await getAssetRegistry(namespace + '.Transactions'); 
 
   // getting next id
   let existingTransactions = await transctionReg.getAll();
@@ -36,7 +36,7 @@ async function IssueTransaction(tx) {  // eslint-disable-line no-unused-vars
   });
   existingTransactionNum ++; 	
   
-  const newTransaction = await factory.newResource(namespace, 'Transaction', existingTransactionNum.toString());
+  const newTransaction = await factory.newResource(namespace, 'Transactions', existingTransactionNum.toString());
 
   newTransaction.timestamp =  Date.now().toString();
   newTransaction.sequenceNumber = existingTransactionNum;
@@ -84,7 +84,7 @@ async function RetireTransaction(tx) {  // eslint-disable-line no-unused-vars
   let newAction = await RetireAction(flavorId,amount, sourceAccountId, tokenTags, transactionTags);
     
   // Create transaction
-  const transctionReg = await getAssetRegistry(namespace + '.Transaction'); 
+  const transctionReg = await getAssetRegistry(namespace + '.Transactions'); 
 
   // getting next id
   let existingTransactions = await transctionReg.getAll();
@@ -95,7 +95,7 @@ async function RetireTransaction(tx) {  // eslint-disable-line no-unused-vars
   });
   existingTransactionNum ++; 	
   
-  const newTransaction = await factory.newResource(namespace, 'Transaction', existingTransactionNum.toString());
+  const newTransaction = await factory.newResource(namespace, 'Transactions', existingTransactionNum.toString());
 
   newTransaction.timestamp =  Date.now().toString();
   newTransaction.sequenceNumber = existingTransactionNum;
@@ -198,7 +198,7 @@ async function DeleteAllDataTransaction(tx) {  // eslint-disable-line no-unused-
     await actionsRegistry.removeAll(actions);
   
     // deleting assets -  Transactions
-    const transactionsRegistry = await getAssetRegistry(namespace + '.Transaction'); 
+    const transactionsRegistry = await getAssetRegistry(namespace + '.Transactions'); 
     let transactions = await transactionsRegistry.getAll();
     await transactionsRegistry.removeAll(transactions);
  
@@ -448,3 +448,4 @@ async function RetireAction (flavorId,
   console.log("Retire transaction action finished");
 
 }
+

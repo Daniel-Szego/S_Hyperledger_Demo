@@ -83,7 +83,7 @@ asset Action extends AbstractSequenceAsset {
     o String tags optional
 }
 
-asset Transaction extends AbstractSequenceAsset {
+asset Transactions extends AbstractSequenceAsset {
     o String timestamp
     o Integer sequenceNumber
     o TransactionState transactionState
@@ -177,6 +177,4 @@ event TokenRetired {
   o String tokenId
   o Integer amount
 }
-
-
 
