@@ -54,6 +54,7 @@ abstract asset AbstractSequenceAsset identified by id {
 
 asset Flavor extends AbstractSequenceAsset {
 	o String tags optional
+    o Boolean isFungable
 	--> Key[] keyIds
     o Integer quorum  
 }
@@ -61,7 +62,7 @@ asset Flavor extends AbstractSequenceAsset {
 asset Token extends AbstractSequenceAsset {
     o Integer amount
     o String tags optional
-    --> Flavor flavorID 
+    --> Flavor flavorId 
     o String flavorTags optional
     o Account accountId
     o String accountTags optional
@@ -120,8 +121,8 @@ transaction STransaction {
 
 // Approve a certain action
 // sign the action with a given key
-transaction Approve {
-  o Action action
+transaction Sign {
+  --> Action action
 }
 
 // TO BE DELETED AT PRODUCTION
@@ -147,7 +148,7 @@ transaction Transfer {
 
 // TO BE DELETED AT PRODUCTION
 transaction Retire {
-	--> Flavor flavourId
+	--> Flavor flavorId
     o Integer amount
     --> Account sourceAccountId
     o String actionTags optional
@@ -173,9 +174,7 @@ event TokenTransferred {
 }
 
 event TokenRetired {
-  --> Token token
+  o String tokenId
+  o Integer amount
 }
-
-
-
 

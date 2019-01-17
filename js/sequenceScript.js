@@ -2,7 +2,6 @@
  * Sequence business and transaction logic
  */
 
-
 let namespace = "org.sequence.model";
 
 /**
@@ -10,6 +9,7 @@ let namespace = "org.sequence.model";
  * @param {org.sequence.model.Issue} tx The sample transaction instance.
  * @transaction
  */
+
 async function IssueTransaction(tx) {  // eslint-disable-line no-unused-vars
   let flavorId = tx.flavorId;
   let amount = tx.amount;
@@ -43,6 +43,7 @@ async function IssueTransaction(tx) {  // eslint-disable-line no-unused-vars
   newTransaction.actions = new Array();
   newTransaction.actions.push(newAction);
   newTransaction.tags = transactionTags;
+  newTransaction.transactionState = "Executed";
  
   transctionReg.add(newTransaction);
 
@@ -54,7 +55,7 @@ async function IssueTransaction(tx) {  // eslint-disable-line no-unused-vars
  * @transaction
  */
 async function TransferTransaction(tx) {  // eslint-disable-line no-unused-vars
-  let flavourId = tx.flavourId
+  let flavorId = tx.flavorId
   let amount = tx.amount
   let sourceAccountId = tx.sourceAccountId
   let destinationAccountId = tx.destinationAccountId
@@ -70,12 +71,40 @@ async function TransferTransaction(tx) {  // eslint-disable-line no-unused-vars
  * @transaction
  */
 async function RetireTransaction(tx) {  // eslint-disable-line no-unused-vars
-  let flavourId = tx.flavourId
+  let flavorId = tx.flavorId
   let amount = tx.amount
   let sourceAccountId = tx.sourceAccountId
   let tokenTags = tx.tokenTags 
   let transactionTags = tx.transactionTags 
  
+  // getting factory
+  const factory = getFactory(); 
+
+  // Call issue action
+  let newAction = await RetireAction(flavorId,amount, sourceAccountId, tokenTags, transactionTags);
+    
+  // Create transaction
+  const transctionReg = await getAssetRegistry(namespace + '.Transaction'); 
+
+  // getting next id
+  let existingTransactions = await transctionReg.getAll();
+  let existingTransactionNum = 0;
+  
+  await existingTransactions.forEach(function (transaction) {
+    existingTransactionNum ++;
+  });
+  existingTransactionNum ++; 	
+  
+  const newTransaction = await factory.newResource(namespace, 'Transaction', existingTransactionNum.toString());
+
+  newTransaction.timestamp =  Date.now().toString();
+  newTransaction.sequenceNumber = existingTransactionNum;
+  newTransaction.actions = new Array();
+  newTransaction.actions.push(newAction);
+  newTransaction.tags = transactionTags;
+  newTransaction.transactionState = "Executed";
+ 
+  transctionReg.add(newTransaction); 
 }
 
 
@@ -112,6 +141,7 @@ async function CreateTestDataTransaction(tx) {  // eslint-disable-line no-unused
     const flavors1 = await factory.newResource(namespace, 'Flavor', "1"); 
     flavors1.keyIds = new Array();
     flavors1.keyIds.push(key1);
+    flavors1.isFungable = true;
     flavors1.quorum  = 1;
     await flavorsReg.add(flavors1);       
 
@@ -120,6 +150,7 @@ async function CreateTestDataTransaction(tx) {  // eslint-disable-line no-unused
     flavors2.keyIds = new Array();
     flavors2.keyIds.push(key2);
     flavors2.keyIds.push(key3);  
+    flavors2.isFungable = true;
     flavors2.quorum  = 1;
     await flavorsReg.add(flavors2);       
 
@@ -174,7 +205,7 @@ async function DeleteAllDataTransaction(tx) {  // eslint-disable-line no-unused-
   	// deleting participants
   
     // deleting participants -  keys
-    const keysRegistry = await getAssetRegistry(namespace + '.Key'); 
+    const keysRegistry = await getParticipantRegistry(namespace + '.Key'); 
     let keys = await keysRegistry.getAll();
     await keysRegistry.removeAll(keys);
 
@@ -198,11 +229,9 @@ async function MultiActionTransaction(tx) {  // eslint-disable-line no-unused-va
 
 
 
-
-
 // SERVICE FUNCTIONS - ACTIONS
-// ISSUE TOKEN ACTION
 
+// ISSUE TOKEN ACTION
 async function IssueAction (flavorId, 
                        amount,
                        destinationAccountId,
@@ -230,7 +259,7 @@ async function IssueAction (flavorId,
   
   await existingTokens.forEach(function (token) {
     
-    if (token.flavorID.getIdentifier() == flavorId.getIdentifier()) {  
+    if (token.flavorId.getIdentifier() == flavorId.getIdentifier()) {  
         if ((!token.tags && !tokenTags) || (token.tags === tokenTags)) {
             if (token.accountId.getIdentifier() == destinationAccountId.getIdentifier()) {
     	  		existingToken = token;
@@ -248,7 +277,7 @@ async function IssueAction (flavorId,
 
   	  newToken.amount = amount;
   	  newToken.tags = tokenTags;
-  	  newToken.flavorID  = flavorId;
+  	  newToken.flavorId  = flavorId;
   	  newToken.accountId = destinationAccountId;
   
 	  await tokenReg.add(newToken);     
@@ -294,7 +323,8 @@ async function IssueAction (flavorId,
   newAction.filterParams = new Array();
   newAction.filterParams.push("-");  
   newAction.destinationAccountId = destinationAccountId;
-  
+  newAction.requiredApprovementNumber = 0;
+  newAction.approvments = new Array();  
   const newSnaphot = await factory.newConcept(namespace,'Snapshot');
   newSnaphot.actionTags = new Array();
   newSnaphot.flavourTags = new Array();
@@ -313,8 +343,108 @@ async function IssueAction (flavorId,
   return newAction;
 }
 
+// ISSUE TOKEN ACTION
+async function RetireAction (flavorId, 
+                       amount,
+                       destinationAccountId,
+                       tokenTags,
+                       transactionTags) {
 
+  console.log("Retire transaction action started");
+  
+  const factory = getFactory(); 
 
+  const tokenReg = await getAssetRegistry(namespace + '.Token'); 
+  
+  let deleteToken = false;
+  let tokenId = "";
+  
+    // getting next id
+  let existingTokens = await tokenReg.getAll();
+  let numberOfTokens = 0;
+  let existingToken;
+  
+  await existingTokens.forEach(function (token) {
+    
+    if (token.flavorId.getIdentifier() == flavorId.getIdentifier()) {  
+        if ((!token.tags && !tokenTags) || (token.tags === tokenTags)) {
+            if (token.accountId.getIdentifier() == destinationAccountId.getIdentifier()) {               
+     	  		 existingToken = token; 
+                 tokenId = token.id;
+              	 if (token.amount == amount) {
+                     deleteToken = true;
+                 }               	
+        		}
+            }
+    } 
+    numberOfTokens ++;
+  });
 
+  if (!existingToken) {
+  	console.log("token to be retired does not exist");
+  }
+  
+  if (deleteToken) {
+    await tokenReg.remove(tokenId);
+  }
+  else {
+    existingToken.amount = existingToken.amount - amount;
+    await tokenReg.update(existingToken);
+  }  
+  
+  // RAISE RETIRE EVENT
+  console.log("Raise event");
 
+  let TokenRetiredEvent = factory.newEvent(namespace, 'TokenRetired');
+  TokenRetiredEvent.tokenId = tokenId;
+  TokenRetiredEvent.amount = amount;
+  await emit(TokenRetiredEvent);       
 
+  // CREATE ISSUE ACTION
+  
+  const actionReg = await getAssetRegistry(namespace + '.Action'); 
+
+  // getting next id
+  let existingActions = await actionReg.getAll();
+  let existingActionsNum = 0;
+  
+  await existingActions.forEach(function (action) {
+    existingActionsNum ++;
+  });
+  existingActionsNum ++; 	
+  
+  const newAction = await factory.newResource(namespace, 'Action', existingActionsNum.toString());
+
+  newAction.timestamp =  Date.now().toString();
+  newAction.type = "Retire";
+  newAction.amount = amount;
+  newAction.flavorId = flavorId;
+  // newAction.sourceAccountId = 0;
+  newAction.filter = "";
+  newAction.filterParams = new Array();
+  newAction.filterParams.push("-");  
+  newAction.destinationAccountId = destinationAccountId;
+  newAction.requiredApprovementNumber = 0;
+  newAction.approvments = new Array();  
+
+  
+  const newSnaphot = await factory.newConcept(namespace,'Snapshot');
+  newSnaphot.actionTags = new Array();
+  newSnaphot.flavourTags = new Array();
+  newSnaphot.sourceAccountTags = new Array();
+  newSnaphot.destinationAccountTags = new Array();
+  newSnaphot.tokenTags = new Array();
+  newSnaphot.transactionTags = new Array();
+  
+  newAction.snapshot = newSnaphot;
+  newAction.tags = "-";
+  
+  await actionReg.add(newAction);    
+  
+  console.log("Issue transaction action finished");
+  
+  return newAction;
+  
+  console.log("Retire transaction action finished");
+
+}
