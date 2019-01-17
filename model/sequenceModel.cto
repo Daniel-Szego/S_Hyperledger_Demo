@@ -98,14 +98,14 @@ asset Feed extends AbstractSequenceAsset {
 
 // PARTICIPANTS
 
-abstract participant AbstractSequenceParticipant {
+abstract participant AbstractSequenceParticipant identified by id {
   o String id
 }
 
-participant Key extends AbstractSequenceAsset {
+participant Key extends AbstractSequenceParticipant {
 }
 
-participant Account extends AbstractSequenceAsset {
+participant Account extends AbstractSequenceParticipant {
     o String tags optional
     o Key[] keyIds
     o Integer quorum
@@ -177,4 +177,6 @@ event TokenRetired {
   o String tokenId
   o Integer amount
 }
+
+
 
